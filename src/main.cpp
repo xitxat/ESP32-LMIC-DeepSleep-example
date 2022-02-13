@@ -1,4 +1,5 @@
 // check branch
+// PINS for TTGO lora32 V1
 
 #include <arduino.h>
 #include <lmic.h>
@@ -314,6 +315,7 @@ void onEvent(ev_t ev)
     }
 }
 
+//  .mx. add CAYENNE LPP
 void do_send(osjob_t *j)
 {
     // Check if there is not a current TX/RX job running
@@ -324,6 +326,18 @@ void do_send(osjob_t *j)
     else
     {
         // Prepare upstream data transmission at the next possible time.
+        //.mx. add 4 lines of C lpp
+
+/*     lpp.reset();
+    lpp.addTemperature(1, curTemp);
+    lpp.addBarometricPressure(3, calToSeaPres);
+    lpp.addAnalogInput(4, 120);
+
+    LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
+    Serial.println(F("Packet queued")); */
+
+//.mx. org  code
+
         LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
         Serial.println(F("Packet queued"));
     }
