@@ -19,6 +19,8 @@ float abPres;
 float calToSeaPres;
 float curTemp;
 
+unsigned long lastMillis = 0;
+
 bool GOTO_DEEPSLEEP = false;
 
 // rename ttn_credentials.h.example to ttn_credentials.h and add you keys
@@ -494,11 +496,13 @@ void loop()
 
     os_runloop_once();
 
-        if (millis() - lastMillis > 10000) {
+runBMP();
+/*         if (millis() - lastMillis > 3000) {
     lastMillis = millis();
-    // this send information to cayenne every 10 seconds,
+    // this send information to cayenne every 3 seconds,
     // so do the necessary calculation for 30 min.
     runBMP();
+        } */
 
     const bool timeCriticalJobs = os_queryTimeCriticalJobs(ms2osticksRound((TX_INTERVAL * 1000)));
     if (!timeCriticalJobs && GOTO_DEEPSLEEP == true && !(LMIC.opmode & OP_TXRXPEND))
