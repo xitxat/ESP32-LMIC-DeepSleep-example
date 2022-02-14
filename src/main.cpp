@@ -1,5 +1,6 @@
 // check branch
 // PINS for TTGO lora32 V1 - good
+// i2c wire in void setup
 
 #include <arduino.h>
 #include <lmic.h>
@@ -7,9 +8,15 @@
 #include <SPI.h>
 #include <ttn_credentials.h>
 
+#include <Wire.h>
+
 #include <Adafruit_BMP280.h>
 #include <CayenneLPP.h>
 CayenneLPP lpp(51);
+
+//I2C pins
+#define I2C_SDA 4
+#define i2C_SCL 15
 
 Adafruit_BMP280 bmp; // use I2C interface
 Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
@@ -38,7 +45,7 @@ static osjob_t sendjob;
 // Respect Fair Access Policy and Maximum Duty Cycle!
 // https://www.thethingsnetwork.org/docs/lorawan/duty-cycle.html
 // https://www.loratools.nl/#/airtime
-const unsigned TX_INTERVAL = 30;
+const unsigned TX_INTERVAL = 10;
 
 // Saves the LMIC structure during DeepSleep
 RTC_DATA_ATTR lmic_t RTC_LMIC;
@@ -466,6 +473,7 @@ void GoDeepSleep()
 void setup()
 {
     Serial.begin(115200);
+    Wire.begin();
 
     Serial.println(F("Starting DeepSleep test"));
     PrintLMICVersion();
