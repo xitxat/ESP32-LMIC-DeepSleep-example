@@ -394,7 +394,7 @@ void onEvent(ev_t ev)
     }
 }
 
-//  .mx. add CAYENNE LPP
+//  .mx. add CAYENNE LPP and sensor RUN function
 void do_send(osjob_t *j)
 {
     // Check if there is not a current TX/RX job running
@@ -405,7 +405,6 @@ void do_send(osjob_t *j)
     else
     {
         // Prepare upstream data transmission at the next possible time.
-        //.mx. add 4 lines of C lpp
 runBMP();
     lpp.reset();
     lpp.addTemperature(1, curTemp);
@@ -415,10 +414,6 @@ runBMP();
     LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
     Serial.println(F("Packet queued"));
     Serial.println(curTemp);
-
-//  Origional  code, 2 lines
-        // LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
-        // Serial.println(F("Packet queued"));
     }
     // Next TX is scheduled after TX_COMPLETE event.
 }
