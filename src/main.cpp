@@ -7,6 +7,18 @@
 #include <SPI.h>
 #include <ttn_credentials.h>
 
+#include <Adafruit_BMP280.h>
+#include <CayenneLPP.h>
+CayenneLPP lpp(51);
+
+Adafruit_BMP280 bmp; // use I2C interface
+Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
+Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
+
+float abPres;
+float calToSeaPres;
+float curTemp;
+
 bool GOTO_DEEPSLEEP = false;
 
 // rename ttn_credentials.h.example to ttn_credentials.h and add you keys
@@ -34,6 +46,64 @@ RTC_DATA_ATTR lmic_t RTC_LMIC;
 #define PIN_LMIC_DIO0 26
 #define PIN_LMIC_DIO1 33
 #define PIN_LMIC_DIO2 32
+
+
+// BME Functions
+void startBMP(){
+    unsigned status;
+  //status = bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
+  status = bmp.begin();
+  if (!status) {
+    Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
+                      "try a different address!"));
+    Serial.print("SensorID was: 0x"); Serial.println(bmp.sensorID(),16);
+    Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
+    Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
+    Serial.print("        ID of 0x60 represents a BME 280.\n");
+    Serial.print("        ID of 0x61 represents a BME 680.\n");
+    while (1) delay(10);
+  }
+
+  /* Default settings from datasheet. */
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+
+  bmp_temp->printSensorDetails();
+}
+
+void runBMP(){
+      sensors_event_t temp_event, pressure_event;
+  bmp_temp->getEvent(&temp_event);
+  bmp_pressure->getEvent(&pressure_event);
+  
+  abPres = pressure_event.pressure;
+  calToSeaPres = abPres * exp (1040 / (29.3 * (temp_event.temperature + 273.15)));
+  curTemp = temp_event.temperature;
+
+    Serial.print(F("Temperature = "));
+  Serial.print(temp_event.temperature);
+  Serial.println(" *C");
+
+  Serial.print(F("Pressure = "));
+  Serial.print(pressure_event.pressure);
+  Serial.println(" hPa");
+
+    Serial.print(F("Calibrated Pressure = "));
+  Serial.print(calToSeaPres);
+  Serial.println(" hPa");
+
+  Serial.println();
+
+
+
+
+    
+ 
+}
+
 
 // Pin mapping
 const lmic_pinmap lmic_pins = {
@@ -328,18 +398,17 @@ void do_send(osjob_t *j)
         // Prepare upstream data transmission at the next possible time.
         //.mx. add 4 lines of C lpp
 
-/*     lpp.reset();
+    lpp.reset();
     lpp.addTemperature(1, curTemp);
     lpp.addBarometricPressure(3, calToSeaPres);
-    lpp.addAnalogInput(4, 120);
+    lpp.addAnalogInput(4, 321);
 
     LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
-    Serial.println(F("Packet queued")); */
+    Serial.println(F("Packet queued"));
 
-//.mx. org  code
-
-        LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
-        Serial.println(F("Packet queued"));
+//  Origional  code, 2 lines
+        // LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
+        // Serial.println(F("Packet queued"));
     }
     // Next TX is scheduled after TX_COMPLETE event.
 }
@@ -399,6 +468,9 @@ void setup()
     Serial.println(F("Starting DeepSleep test"));
     PrintLMICVersion();
 
+    // BME init
+     startBMP();
+
     // LMIC init
     os_init();
 
@@ -421,6 +493,12 @@ void loop()
     static unsigned long lastPrintTime = 0;
 
     os_runloop_once();
+
+        if (millis() - lastMillis > 10000) {
+    lastMillis = millis();
+    // this send information to cayenne every 10 seconds,
+    // so do the necessary calculation for 30 min.
+    runBMP();
 
     const bool timeCriticalJobs = os_queryTimeCriticalJobs(ms2osticksRound((TX_INTERVAL * 1000)));
     if (!timeCriticalJobs && GOTO_DEEPSLEEP == true && !(LMIC.opmode & OP_TXRXPEND))
