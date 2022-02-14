@@ -1,5 +1,5 @@
 // check branch
-// PINS for TTGO lora32 V1
+// PINS for TTGO lora32 V1 - good
 
 #include <arduino.h>
 #include <lmic.h>
