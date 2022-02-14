@@ -16,7 +16,7 @@ CayenneLPP lpp(51);
 
 //I2C pins
 #define I2C_SDA 4
-#define i2C_SCL 15
+#define I2C_SCL 15
 
 Adafruit_BMP280 bmp; // use I2C interface
 Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
@@ -473,7 +473,7 @@ void GoDeepSleep()
 void setup()
 {
     Serial.begin(115200);
-    Wire.begin();
+    Wire.begin(I2C_SDA, I2C_SCL);
 
     Serial.println(F("Starting DeepSleep test"));
     PrintLMICVersion();
@@ -504,13 +504,14 @@ void loop()
 
     os_runloop_once();
 
-runBMP();
-/*         if (millis() - lastMillis > 3000) {
+//runBMP();
+        if (millis() - lastMillis > 10000) {
     lastMillis = millis();
-    // this send information to cayenne every 3 seconds,
+    // this send information to cayenne every 10 seconds,
     // so do the necessary calculation for 30 min.
     runBMP();
-        } */
+     Serial.println(temp_event.temperature);
+        }
 
     const bool timeCriticalJobs = os_queryTimeCriticalJobs(ms2osticksRound((TX_INTERVAL * 1000)));
     if (!timeCriticalJobs && GOTO_DEEPSLEEP == true && !(LMIC.opmode & OP_TXRXPEND))
