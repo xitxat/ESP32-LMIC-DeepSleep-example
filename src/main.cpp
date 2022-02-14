@@ -406,14 +406,15 @@ void do_send(osjob_t *j)
     {
         // Prepare upstream data transmission at the next possible time.
         //.mx. add 4 lines of C lpp
-
+runBMP();
     lpp.reset();
     lpp.addTemperature(1, curTemp);
     lpp.addBarometricPressure(3, calToSeaPres);
-    lpp.addAnalogInput(4, 321);
+    lpp.addAnalogInput(4, 121);
 
     LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
     Serial.println(F("Packet queued"));
+    Serial.println(curTemp);
 
 //  Origional  code, 2 lines
         // LMIC_setTxData2(1, mydata, sizeof(mydata) - 1, 0);
@@ -504,14 +505,15 @@ void loop()
 
     os_runloop_once();
 
-//runBMP();
-        if (millis() - lastMillis > 10000) {
+
+//delay(500);
+/*         if (millis() - lastMillis > 1000) {
     lastMillis = millis();
-    // this send information to cayenne every 10 seconds,
+    // this send information to cayenne every 1 seconds,
     // so do the necessary calculation for 30 min.
     runBMP();
-     Serial.println(temp_event.temperature);
-        }
+     Serial.println(curTemp);
+        } */
 
     const bool timeCriticalJobs = os_queryTimeCriticalJobs(ms2osticksRound((TX_INTERVAL * 1000)));
     if (!timeCriticalJobs && GOTO_DEEPSLEEP == true && !(LMIC.opmode & OP_TXRXPEND))
