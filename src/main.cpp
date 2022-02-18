@@ -1,12 +1,14 @@
 // check branch
 // PINS for TTGO lora32 V1 - good
 // i2c wire in void setup
+// LC7
 
 #include <arduino.h>
 #include <lmic.h>
 #include <hal/hal.h>
 #include <SPI.h>
 #include <ttn_credentials.h>
+#include "Adafruit_LC709203F.h"
 
 #include <Wire.h>
 
@@ -18,6 +20,7 @@ CayenneLPP lpp(51);
 #define I2C_SDA 4
 #define I2C_SCL 15
 
+Adafruit_LC709203F lc;
 Adafruit_BMP280 bmp; // use I2C interface
 Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
 Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
@@ -25,6 +28,9 @@ Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
 float abPres;
 float calToSeaPres;
 float curTemp;
+
+float voltBat;  // battery voltage
+float batTemp;
 
 unsigned long lastMillis = 0;
 
@@ -111,6 +117,40 @@ void runBMP(){
 
     
  
+}
+
+// LC7 Functions
+void runSblink(){
+    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+}
+
+void initLC7(){
+  if (!lc.begin()) {
+    Serial.println(F("Couldnt find Adafruit LC709203F?\nMake sure a battery is plugged in!"));
+    while (1) delay(10);
+  }
+  Serial.println(F("Found LC709203F"));
+  Serial.print("Version: 0x"); Serial.println(lc.getICversion(), HEX);
+  
+  lc.setThermistorB(3950);
+  Serial.print("Thermistor B = "); Serial.println(lc.getThermistorB());
+  Serial.println(" ");
+
+  lc.setPackSize(LC709203F_APA_1000MAH);
+  lc.setAlarmVoltage(3.8);
+  voltBat = lc.cellVoltage();
+  batTemp = lc.getThermistorB();
+}
+
+void runLC7(){
+    Serial.print("Batt Voltage: "); Serial.println(lc.cellVoltage(), 3);
+  Serial.print("Batt Percent: "); Serial.println(lc.cellPercent(), 1);
+  Serial.print("Batt Temp: "); Serial.println(lc.getCellTemperature(), 1);
+    Serial.print(" ");
+    if (lc.cellVoltage() >= 4.15){
+      runSblink();
+    }
+        Serial.print("volt Bat: "); Serial.println(voltBat);
 }
 
 
@@ -405,11 +445,16 @@ void do_send(osjob_t *j)
     else
     {
         // Prepare upstream data transmission at the next possible time.
+        // mx functions.
 runBMP();
+runLC7();
     lpp.reset();
     lpp.addTemperature(1, curTemp);
+    lpp.addTemperature(2, voltBat);
     lpp.addBarometricPressure(3, calToSeaPres);
-    lpp.addAnalogInput(4, 121);
+    lpp.addAnalogInput(4, 83);
+    //lpp.addTemperature(2, voltBat);
+
 
     LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
     Serial.println(F("Packet queued"));
@@ -476,6 +521,9 @@ void setup()
 
     // BME init
      startBMP();
+
+     // LC76 init
+     initLC7();
 
     // LMIC init
     os_init();
