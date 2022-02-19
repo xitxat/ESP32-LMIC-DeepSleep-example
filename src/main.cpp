@@ -451,7 +451,7 @@ runBMP();
 runLC7();
     lpp.reset();
     lpp.addTemperature(1, curTemp);
-    lpp.addTemperature(2, voltBat);
+    lpp.addAnalogInput(2, voltBat);             //battery voltage
     lpp.addBarometricPressure(3, calToSeaPres);
     lpp.addAnalogInput(4, 90);
     lpp.addTemperature(5, batTemp);
