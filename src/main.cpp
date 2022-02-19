@@ -1,7 +1,7 @@
 // check branch
 // PINS for TTGO lora32 V1 - good
 // i2c wire in void setup
-// LC7
+// LC7: batVolt, batTemp,
 
 #include <arduino.h>
 #include <lmic.h>
@@ -30,7 +30,8 @@ float calToSeaPres;
 float curTemp;
 
 float voltBat;  // battery voltage
-float batTemp;
+float  batTemp;
+float batPercent;
 
 unsigned long lastMillis = 0;
 
@@ -44,7 +45,6 @@ void os_getArtEui(u1_t *buf) { memcpy_P(buf, APPEUI, 8); }
 void os_getDevEui(u1_t *buf) { memcpy_P(buf, DEVEUI, 8); }
 void os_getDevKey(u1_t *buf) { memcpy_P(buf, APPKEY, 16); }
 
-static uint8_t mydata[] = "Test";
 static osjob_t sendjob;
 
 // Schedule TX every this many seconds
@@ -139,7 +139,8 @@ void initLC7(){
   lc.setPackSize(LC709203F_APA_1000MAH);
   lc.setAlarmVoltage(3.8);
   voltBat = lc.cellVoltage();
-  batTemp = lc.getThermistorB();
+  batTemp = lc.getCellTemperature();
+  batPercent = lc.cellPercent();
 }
 
 void runLC7(){
@@ -147,7 +148,7 @@ void runLC7(){
   Serial.print("Batt Percent: "); Serial.println(lc.cellPercent(), 1);
   Serial.print("Batt Temp: "); Serial.println(lc.getCellTemperature(), 1);
     Serial.print(" ");
-    if (lc.cellVoltage() >= 4.15){
+    if (lc.cellVoltage() > 4.1){
       runSblink();
     }
         Serial.print("volt Bat: "); Serial.println(voltBat);
@@ -452,8 +453,9 @@ runLC7();
     lpp.addTemperature(1, curTemp);
     lpp.addTemperature(2, voltBat);
     lpp.addBarometricPressure(3, calToSeaPres);
-    lpp.addAnalogInput(4, 83);
-    //lpp.addTemperature(2, voltBat);
+    lpp.addAnalogInput(4, 90);
+    lpp.addTemperature(5, batTemp);
+    lpp.addRelativeHumidity(6,batPercent);
 
 
     LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
